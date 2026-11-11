@@ -12,7 +12,8 @@ declare module 'express-serve-static-core' {
 }
 
 /** Response shapes from shoplab-contracts openapi/orders.yaml. */
-const toSummary = (o: OrderRow) => ({ id: o.id, status: o.status, total: o.total, currency: o.currency, placedAt: o.placed_at.toISOString() });
+/** `cartId` is the cart the order was created from; the checkout UI uses it to find its own order after the asynchronous checkout. */
+const toSummary = (o: OrderRow) => ({ id: o.id, cartId: o.cart_id, status: o.status, total: o.total, currency: o.currency, placedAt: o.placed_at.toISOString() });
 
 export interface AppDeps extends OrderDeps { cfg: Config }
 

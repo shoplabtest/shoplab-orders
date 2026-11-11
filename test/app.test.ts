@@ -17,7 +17,7 @@ const call = (path: string, o: { method?: string; body?: unknown; token?: string
     body: o.body ? JSON.stringify(o.body) : undefined,
   });
 
-type Order = { id: string; status: string; total: number; currency: string; placedAt: string; userId?: string; lines?: { productId: string; quantity: number; unitPrice: number | null }[] };
+type Order = { id: string; cartId?: string; status: string; total: number; currency: string; placedAt: string; userId?: string; lines?: { productId: string; quantity: number; unitPrice: number | null }[] };
 
 beforeEach(() => {
   deps.store.orders.clear();
@@ -42,7 +42,8 @@ test('GET /orders lists only the caller\'s orders, newest first, in the contract
   await place('cart-3', OTHER);
   const list = (await (await call('/orders', { token: token(USER) })).json()) as Order[];
   assert.deepEqual(list.map((o) => o.id), [second, first]);
-  assert.deepEqual(Object.keys(list[0]).sort(), ['currency', 'id', 'placedAt', 'status', 'total']);
+  assert.deepEqual(Object.keys(list[0]).sort(), ['cartId', 'currency', 'id', 'placedAt', 'status', 'total']);
+  assert.deepEqual(list.map((o) => o.cartId), ['cart-2', 'cart-1']); // lets the checkout UI find the order it just caused
   assert.equal(list[0].status, 'placed');
 });
 
