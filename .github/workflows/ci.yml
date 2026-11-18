@@ -7,3 +7,11 @@ jobs:
     uses: shoplabtest/shoplab-infra/.github/workflows/service-ci.yml@main
     with:
       database: true
+  # The catalog URL is a deploy output owned by shoplab-infra. Fail early if it is not published where services expect it.
+  outputs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Read catalog_api_url from the dev outputs
+        run: |
+          url=$(curl -fsSL https://raw.githubusercontent.com/shoplabtest/shoplab-infra/main/deploy/outputs.dev.json | jq -r .catalog_api_url)
+          case "$url" in http://*|https://*) echo "catalog api: $url" ;; *) echo "catalog_api_url is missing from shoplab-infra deploy/outputs.dev.json: '$url'"; exit 1 ;; esac
