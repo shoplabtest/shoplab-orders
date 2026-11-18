@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
+    "gen:contracts": "node ../shoplab-contracts/scripts/generate.mjs --services orders --out src/generated/contracts.ts --types-only",
     "typecheck": "tsc --noEmit",
     "test": "tsx --test test/*.test.ts",
     "migrate": "tsx src/migrate-cli.ts",

@@ -3,17 +3,17 @@ import jwt from 'jsonwebtoken';
 import type { Config } from './config.ts';
 import { canTransition, type Status } from './machine.ts';
 import { cancelOrder, type Deps as OrderDeps } from './orders.ts';
+import type { Order, OrderSummary } from './generated/contracts.ts';
 import type { OrderRow } from './store.ts';
-
 interface Claims { sub: string; role: 'customer' | 'staff' | 'admin'; tenant: string }
 
 declare module 'express-serve-static-core' {
   interface Request { claims?: Claims }
 }
 
-/** Response shapes from shoplab-contracts openapi/orders.yaml. */
+/** Response shapes come from shoplab-contracts' openapi/orders.yaml through src/generated/contracts.ts (npm run gen:contracts). */
 /** `cartId` is the cart the order was created from; the checkout UI uses it to find its own order after the asynchronous checkout. */
-const toSummary = (o: OrderRow) => ({ id: o.id, cartId: o.cart_id, status: o.status, total: o.total, currency: o.currency, placedAt: o.placed_at.toISOString() });
+const toSummary = (o: OrderRow): OrderSummary => ({ id: o.id, cartId: o.cart_id, status: o.status, total: o.total, currency: o.currency, placedAt: o.placed_at.toISOString() });
 
 export interface AppDeps extends OrderDeps { cfg: Config }
 
@@ -35,7 +35,7 @@ export function createApp(deps: AppDeps) {
   const requireStaff = (req: Request, res: Response, next: NextFunction) =>
     req.claims!.role === 'customer' ? void res.status(403).json({ error: 'forbidden' }) : next();
 
-  const toOrder = async (o: OrderRow) => ({
+  const toOrder = async (o: OrderRow): Promise<Order> => ({
     ...toSummary(o),
     userId: o.user_id,
     lines: (await store.getLines(o.id)).map((l) => ({ productId: l.product_id, quantity: l.quantity, unitPrice: l.unit_price })),
