@@ -55,11 +55,12 @@ export function createApp(deps: AppDeps) {
     return order;
   };
 
-  const move = (to: Status) => async (req: Request, res: Response) => {
+  const move = (to: Status, after?: (next: OrderRow) => Promise<void>) => async (req: Request, res: Response) => {
     const order = await loadVisible(req, res);
     if (!order) return;
     const next = await store.transition(order.id, to);
     if (!next) return void res.status(409).json({ error: 'invalid_transition', from: order.status, to });
+    await after?.(next);
     res.json(await toOrder(next));
   };
 
@@ -83,7 +84,7 @@ export function createApp(deps: AppDeps) {
   });
 
   app.post('/orders/:id/pack', requireAuth, requireStaff, move('packed'));
-  app.post('/orders/:id/ship', requireAuth, requireStaff, move('shipped'));
+  app.post('/orders/:id/ship', requireAuth, requireStaff, move('shipped', (o) => deps.events.publish('order.shipped', { orderId: o.id, userId: o.user_id, shippedAt: o.updated_at.toISOString() })));
 
   return app;
 }
