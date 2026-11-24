@@ -14,6 +14,9 @@ export interface OrderPlaced {
   placedAt: string;
 }
 
+/** Published when an order is handed to the carrier. */
+export interface OrderShipped { orderId: string; userId: string; shippedAt: string }
+
 /** Matches events/order.cancelled.schema.json. */
 export interface OrderCancelled { orderId: string; userId: string; reason?: string; cancelledAt: string }
 
@@ -31,6 +34,7 @@ export interface PaymentFailed { paymentId: string; orderId: string; reason?: st
 export interface Publisher {
   publish(routingKey: 'order.placed', body: OrderPlaced): Promise<void>;
   publish(routingKey: 'order.cancelled', body: OrderCancelled): Promise<void>;
+  publish(routingKey: 'order.shipped', body: OrderShipped): Promise<void>;
   close(): Promise<void>;
 }
 

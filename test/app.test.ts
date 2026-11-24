@@ -86,6 +86,20 @@ test('pack and ship are staff-only and follow the state machine', async () => {
   assert.equal((await call(`/orders/${id}/cancel`, { method: 'POST', token: token(USER) })).status, 409, 'shipped orders cannot be cancelled');
 });
 
+test('shipping publishes order.shipped once; packing and a refused ship publish nothing', async () => {
+  const id = await place('cart-ship');
+  const shipped = () => deps.events.published.filter((e) => e.key === 'order.shipped');
+  await deps.store.transition(id, 'paid');
+  await call(`/orders/${id}/pack`, { method: 'POST', token: token('s1', 'staff') });
+  assert.equal(shipped().length, 0);
+  assert.equal((await call(`/orders/${id}/ship`, { method: 'POST', token: token('s1', 'staff') })).status, 200);
+  assert.equal((await call(`/orders/${id}/ship`, { method: 'POST', token: token('s1', 'staff') })).status, 409);
+  assert.equal(shipped().length, 1);
+  const body = shipped()[0].body as { orderId: string; userId: string; shippedAt: string };
+  assert.deepEqual([body.orderId, body.userId], [id, USER]);
+  assert.ok(!Number.isNaN(Date.parse(body.shippedAt)));
+});
+
 test('healthz needs no token', async () => {
   assert.equal((await call('/healthz')).status, 200);
 });
